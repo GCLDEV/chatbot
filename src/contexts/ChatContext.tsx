@@ -17,7 +17,7 @@ interface ChatState {
 }
 
 type ChatAction =
-  | { type: 'ADD_MESSAGE'; payload: Message }
+  | { type: 'ADD_MESSAGE'; payload: Omit<Message, 'id' | 'timestamp'> }
   | { type: 'LOAD_MESSAGES'; payload: Message[] }
   | { type: 'SET_TYPING'; payload: boolean }
   | { type: 'SET_CONNECTED'; payload: boolean }
@@ -89,7 +89,7 @@ interface ChatProviderProps {
   children: ReactNode;
 }
 
-export function ChatProvider({ children }: ChatProviderProps): JSX.Element {
+export function ChatProvider({ children }: ChatProviderProps): React.JSX.Element {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const [isLoaded, setIsLoaded] = React.useState(false);
 
