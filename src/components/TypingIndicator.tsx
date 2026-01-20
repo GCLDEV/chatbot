@@ -9,9 +9,9 @@ interface TypingIndicatorProps {
 
 export function TypingIndicator({ className = '' }: TypingIndicatorProps) {
   return (
-    <View className={`bg-white px-4 py-3 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-md border border-gray-200 shadow-sm ${className}`}>
+    <View className={`bg-gray-700 px-4 py-3 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-md border border-gray-600 shadow-lg ${className}`}>
       <HStack space="xs" className="items-center">
-        <Text size="sm" className="text-gray-600 mr-2">digitando</Text>
+        <Text size="sm" className="text-gray-300 mr-2">digitando</Text>
         <HStack space="xs" className="items-center">
           <TypingDot delay={0} />
           <TypingDot delay={200} />
@@ -57,7 +57,7 @@ function TypingDot({ delay }: { delay: number }) {
         opacity: opacityAnim,
       }}
     >
-      <View className="w-2 h-2 bg-gray-400 rounded-full" />
+      <View className="w-2 h-2 bg-emerald-400 rounded-full" />
     </Animated.View>
   );
 }

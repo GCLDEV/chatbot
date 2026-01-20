@@ -1,10 +1,13 @@
 import { TypewriterText } from '@/components/TypewriterText';
+import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { Avatar } from '@/components/ui/avatar';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Clipboard, Easing, TouchableOpacity, View } from 'react-native';
+import { Animated, Clipboard, Easing, TouchableOpacity, View } from 'react-native';
 
 import { Bot, Copy, User } from 'lucide-react-native';
 
@@ -24,6 +27,8 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
   const slideAnim = useRef(new Animated.Value(20)).current;
   // Botão de copiar aparece imediatamente para mensagens antigas, após digitação para novas
   const [showCopyButton, setShowCopyButton] = useState(!message.isBot || !message.isNewMessage);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copyMessage, setCopyMessage] = useState('');
 
   useEffect(() => {
     Animated.parallel([
@@ -49,12 +54,14 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
     });
   };
 
-  const copyMessage = async () => {
+  const handleCopyMessage = async () => {
     try {
       Clipboard.setString(message.text);
-      Alert.alert('Copiado!', 'Mensagem copiada para a área de transferência.');
+      setCopyMessage('Mensagem copiada para a área de transferência!');
+      setShowCopyDialog(true);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível copiar a mensagem.');
+      setCopyMessage('Não foi possível copiar a mensagem.');
+      setShowCopyDialog(true);
     }
   };
 
@@ -75,16 +82,16 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
         className={`${message.isBot ? 'justify-start' : 'justify-end'} px-1`}
       >
         {message.isBot && (
-          <Avatar size="sm" className="mt-1 bg-emerald-100 shadow-sm">
-            <Icon as={Bot} size="sm" className="text-emerald-700" />
+          <Avatar size="sm" className="mt-1 bg-emerald-500 shadow-lg border border-emerald-400">
+            <Icon as={Bot} size="sm" className="text-white" />
           </Avatar>
         )}
         
         <View className={`max-w-[85%] ${message.isBot ? 'mr-12' : 'ml-12'} relative`}>
           <View
-            className={`px-4 py-3 shadow-sm ${
+            className={`px-4 py-3 shadow-lg ${
               message.isBot
-                ? 'bg-white rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-md border border-gray-200'
+                ? 'bg-gray-700 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-md border border-gray-600'
                 : 'bg-emerald-500 rounded-tl-2xl rounded-bl-2xl rounded-br-2xl rounded-tr-md'
             }`}
           >
@@ -93,14 +100,14 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
                 text={message.text}
                 speed={50}
                 className={`leading-5 ${
-                  message.isBot ? 'text-gray-800' : 'text-white'
+                  message.isBot ? 'text-gray-100' : 'text-white'
                 }`}
                 onComplete={() => setShowCopyButton(true)}
               />
             ) : (
               <Text
                 className={`leading-5 ${
-                  message.isBot ? 'text-gray-800' : 'text-white'
+                  message.isBot ? 'text-gray-100' : 'text-white'
                 }`}
               >
                 {message.text}
@@ -109,7 +116,7 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
             <Text
               size="xs"
               className={`mt-1 text-right ${
-                message.isBot ? 'text-gray-500' : 'text-emerald-100'
+                message.isBot ? 'text-gray-400' : 'text-emerald-100'
               }`}
             >
               {formatTime(message.timestamp)}
@@ -119,21 +126,46 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
           {/* Botão de copiar para mensagens do bot */}
           {message.isBot && showCopyButton && (
             <TouchableOpacity
-              onPress={copyMessage}
-              className="absolute -top-2 -right-2 p-2 rounded-full bg-white shadow-md border border-gray-200"
+              onPress={handleCopyMessage}
+              className="absolute -top-2 -right-2 p-2 rounded-full bg-gray-600 shadow-lg border border-gray-500"
               style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Icon as={Copy} size="xs" className="text-emerald-600" />
+              <Icon as={Copy} size="xs" className="text-emerald-400" />
             </TouchableOpacity>
           )}
         </View>
 
         {!message.isBot && (
-          <Avatar size="sm" className="mt-1 bg-blue-100 shadow-sm">
-            <Icon as={User} size="sm" className="text-blue-700" />
+          <Avatar size="sm" className="mt-1 bg-blue-500 shadow-lg border border-blue-400">
+            <Icon as={User} size="sm" className="text-white" />
           </Avatar>
         )}
       </HStack>
+
+      {/* AlertDialog para feedback de cópia */}
+      <AlertDialog isOpen={showCopyDialog} onClose={() => setShowCopyDialog(false)}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent className="bg-gray-800 border border-gray-700">
+          <AlertDialogHeader>
+            <Heading className="text-gray-100" size="md">
+              {copyMessage.includes('copiada') ? 'Copiado!' : 'Erro'}
+            </Heading>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className="text-gray-300">
+              {copyMessage}
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button
+              className="bg-emerald-500"
+              onPress={() => setShowCopyDialog(false)}
+            >
+              <ButtonText className="text-white">OK</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Animated.View>
   );
 }

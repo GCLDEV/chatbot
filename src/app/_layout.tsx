@@ -10,13 +10,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <GluestackUIProvider mode={colorScheme === 'dark' ? 'dark' : 'light'}>
+      <GluestackUIProvider mode="dark">
         <ChatProvider>
           <Stack
             screenOptions={{
               headerShown: false,
               contentStyle: {
-                backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+                backgroundColor: '#111827', // gray-900
               },
             }}
           />

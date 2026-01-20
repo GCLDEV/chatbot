@@ -1,9 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Clipboard, Keyboard, KeyboardAvoidingView, Platform, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Clipboard, Keyboard, KeyboardAvoidingView, Platform, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { Avatar } from '@/components/ui/avatar';
+import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
@@ -12,7 +14,7 @@ import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
-import { Bot, MoreVertical, Send, Trash2 } from 'lucide-react-native';
+import { Bot, Send, Trash2 } from 'lucide-react-native';
 
 import { AnimatedMessageBubble } from '@/components/AnimatedMessageBubble';
 import { TypingIndicator } from '@/components/TypingIndicator';
@@ -25,6 +27,9 @@ export default function ChatBotScreen() {
   const [inputText, setInputText] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copyDialogMessage, setCopyDialogMessage] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const colorScheme = useColorScheme();
 
@@ -73,23 +78,12 @@ export default function ChatBotScreen() {
   }, [scrollToBottom]);
 
   const clearChat = useCallback(() => {
-    Alert.alert(
-      'Limpar conversa',
-      'Tem certeza que deseja apagar todas as mensagens? Esta ação não pode ser desfeita.',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Limpar',
-          style: 'destructive',
-          onPress: () => {
-            clearMessages();
-          },
-        },
-      ]
-    );
+    setShowClearDialog(true);
+  }, []);
+
+  const handleClearConfirm = useCallback(() => {
+    clearMessages();
+    setShowClearDialog(false);
   }, [clearMessages]);
 
   const copyLastBotMessage = useCallback(async () => {
@@ -100,12 +94,15 @@ export default function ChatBotScreen() {
     if (lastBotMessage) {
       try {
         Clipboard.setString(lastBotMessage.text);
-        Alert.alert('Copiado!', 'Mensagem copiada para a área de transferência.');
+        setCopyDialogMessage('Mensagem copiada para a área de transferência!');
+        setShowCopyDialog(true);
       } catch (error) {
-        Alert.alert('Erro', 'Não foi possível copiar a mensagem.');
+        setCopyDialogMessage('Não foi possível copiar a mensagem.');
+        setShowCopyDialog(true);
       }
     } else {
-      Alert.alert('Nenhuma mensagem', 'Não há mensagens do bot para copiar.');
+      setCopyDialogMessage('Não há mensagens do bot para copiar.');
+      setShowCopyDialog(true);
     }
   }, [state.messages]);
 
@@ -157,8 +154,8 @@ export default function ChatBotScreen() {
     React.memo(() => (
       <View className="mb-2 px-1">
         <HStack space="sm" className="justify-start">
-          <Avatar size="sm" className="mt-1 bg-emerald-100 shadow-sm">
-            <Icon as={Bot} size="sm" className="text-emerald-700" />
+          <Avatar size="sm" className="mt-1 bg-emerald-500 shadow-lg border border-emerald-400">
+            <Icon as={Bot} size="sm" className="text-white" />
           </Avatar>
           <View className="max-w-[85%] mr-12">
             <TypingIndicator />
@@ -181,48 +178,36 @@ export default function ChatBotScreen() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <SafeAreaView className="flex-1 bg-gray-900">
+      <StatusBar style="light" />
 
-      {/* WhatsApp-style Header */}
-      <View className="bg-emerald-600 px-4 py-3 shadow-lg">
+      {/* Modern Dark Header */}
+      <View className="bg-gray-800 px-4 py-3 shadow-lg border-b border-gray-700">
         <HStack space="md" className="items-center justify-between">
           <HStack space="md" className="items-center flex-1">
-            <Avatar size="md" className="bg-emerald-100 border-2 border-white">
-              <Icon as={Bot} size="md" className="text-emerald-700" />
+            <Avatar size="md" className="bg-emerald-500 border-2 border-emerald-400 shadow-lg">
+              <Icon as={Bot} size="md" className="text-white" />
             </Avatar>
             <VStack className="flex-1">
-              <Heading size="lg" className="text-white font-semibold">
+              <Heading size="lg" className="text-gray-100 font-bold">
                 ChatBot Assistant
               </Heading>
-              <Text size="xs" className="text-emerald-100 font-medium">
+              <Text size="xs" className="text-emerald-400 font-medium">
                 {state.isTyping ? 'digitando...' : 'online'}
               </Text>
             </VStack>
           </HStack>
           
           {/* Ações */}
-          <HStack space="sm" className="items-center">
-            <TouchableOpacity
-              onPress={copyLastBotMessage}
-              className="p-2 rounded-full"
-              disabled={!state.messages.some(msg => msg.isBot)}
-            >
-              <Icon 
-                as={MoreVertical} 
-                className={state.messages.some(msg => msg.isBot) ? "text-white" : "text-emerald-300"} 
-                size="sm" 
-              />
-            </TouchableOpacity>
-            
+          <HStack space="sm" className="items-center">                        
             <TouchableOpacity
               onPress={clearChat}
-              className="p-2 rounded-full"
+              className="p-2 rounded-full bg-red-500/10 hover:bg-red-500/20"
               disabled={state.messages.length === 0}
             >
               <Icon 
                 as={Trash2} 
-                className={state.messages.length > 0 ? "text-white" : "text-emerald-300"} 
+                className={state.messages.length > 0 ? "text-red-400" : "text-gray-500"} 
                 size="sm" 
               />
             </TouchableOpacity>
@@ -237,11 +222,8 @@ export default function ChatBotScreen() {
         style={{ paddingBottom: Platform.OS === 'android' ? keyboardHeight : 0 }}
       >
 
-        {/* Chat Area with WhatsApp-style background */}
-        <View className="flex-1" style={{
-          backgroundColor: '#0f172a',
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(30, 41, 59, 0.1) 10px, rgba(30, 41, 59, 0.1) 20px)'
-        }}>
+        {/* Chat Area with Modern Dark background */}
+        <View className="flex-1 bg-gray-900">
           <ScrollView
             ref={scrollViewRef}
             className="flex-1 px-3 py-2"
@@ -250,7 +232,7 @@ export default function ChatBotScreen() {
             onContentSizeChange={scrollToBottom}
             onLayout={scrollToBottom}
           >
-            <VStack space="sm">
+            <VStack space="sm" className='mt-4'>
               {state.messages.map((message, index) => (
                 <AnimatedMessageBubble
                   key={message.id}
@@ -264,13 +246,13 @@ export default function ChatBotScreen() {
           </ScrollView>
         </View>
 
-        {/* WhatsApp-style Input Area */}
-        <View className="px-3 py-3 bg-slate-900 border-t border-slate-800">
+        {/* Modern Dark Input Area */}
+        <View className="px-3 py-3 bg-gray-800 border-t border-gray-700">
           <HStack space="sm" className="items-end">
-            <Input className="flex-1 bg-slate-800 rounded-3xl border border-slate-700 min-h-[44px]">
+            <Input className="flex-1 bg-gray-700 rounded-3xl border border-gray-600 min-h-[44px] shadow-lg">
               <InputField
                 placeholder="Digite uma mensagem"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#9CA3AF"
                 value={inputText}
                 onChangeText={setInputText}
                 multiline={true}
@@ -290,18 +272,82 @@ export default function ChatBotScreen() {
             <TouchableOpacity
               onPress={sendMessage}
               disabled={!inputText.trim() || state.isTyping}
-              className={`w-12 h-12 rounded-full items-center justify-center ${inputText.trim() && !state.isTyping ? 'bg-emerald-600' : 'bg-slate-700'
+              className={`w-12 h-12 rounded-full items-center justify-center shadow-lg ${
+                inputText.trim() && !state.isTyping ? 'bg-emerald-500' : 'bg-gray-600'
                 }`}
             >
               <Icon
                 as={Send}
-                className={inputText.trim() && !state.isTyping ? 'text-white' : 'text-slate-500'}
+                className={inputText.trim() && !state.isTyping ? 'text-white' : 'text-gray-400'}
                 size="sm"
               />
             </TouchableOpacity>
           </HStack>
         </View>
       </KeyboardAvoidingView>
+
+      {/* AlertDialog para limpar conversa */}
+      <AlertDialog isOpen={showClearDialog} onClose={() => setShowClearDialog(false)}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent className="bg-gray-800 border border-gray-700">
+          <AlertDialogHeader>
+            <Heading className="text-gray-100" size="md">
+              Limpar conversa
+            </Heading>
+            <AlertDialogCloseButton>
+              <Icon as={Trash2} size="sm" className="text-gray-400" />
+            </AlertDialogCloseButton>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className="text-gray-300">
+              Tem certeza que deseja apagar todas as mensagens? Esta ação não pode ser desfeita.
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter className="gap-3">
+            <Button
+              variant="outline"
+              onPress={() => setShowClearDialog(false)}
+              className="border-gray-600"
+            >
+              <ButtonText className="text-gray-300">Cancelar</ButtonText>
+            </Button>
+            <Button
+              className="bg-red-600"
+              onPress={handleClearConfirm}
+            >
+              <ButtonText className="text-white">Limpar</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog para feedback de cópia */}
+      <AlertDialog isOpen={showCopyDialog} onClose={() => setShowCopyDialog(false)}>
+        <AlertDialogBackdrop />
+        <AlertDialogContent className="bg-gray-800 border border-gray-700">
+          <AlertDialogHeader>
+            <Heading className="text-gray-100" size="md">
+              {copyDialogMessage.includes('copiada') ? 'Copiado!' : copyDialogMessage.includes('possível') ? 'Erro' : 'Aviso'}
+            </Heading>
+            <AlertDialogCloseButton>
+              <Icon as={Bot} size="sm" className="text-gray-400" />
+            </AlertDialogCloseButton>
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <Text className="text-gray-300">
+              {copyDialogMessage}
+            </Text>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button
+              className="bg-emerald-500"
+              onPress={() => setShowCopyDialog(false)}
+            >
+              <ButtonText className="text-white">OK</ButtonText>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SafeAreaView>
   );
 }
