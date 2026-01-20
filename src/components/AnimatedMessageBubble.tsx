@@ -158,7 +158,7 @@ export function AnimatedMessageBubble({ message }: AnimatedMessageBubbleProps) {
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
-              className="bg-emerald-500"
+              className="bg-emerald-500 mt-8"
               onPress={() => setShowCopyDialog(false)}
             >
               <ButtonText className="text-white">OK</ButtonText>

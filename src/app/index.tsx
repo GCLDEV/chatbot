@@ -303,7 +303,7 @@ export default function ChatBotScreen() {
               Tem certeza que deseja apagar todas as mensagens? Esta ação não pode ser desfeita.
             </Text>
           </AlertDialogBody>
-          <AlertDialogFooter className="gap-3">
+          <AlertDialogFooter className="gap-3 mt-8">
             <Button
               variant="outline"
               onPress={() => setShowClearDialog(false)}
